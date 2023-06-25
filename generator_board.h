@@ -17,17 +17,15 @@ extern int minPowerSteps;
 extern int maxPowerSteps;
 
 typedef struct {
-  GeaMessageHeader_t header;
   uint8_t coil1_profile;
   uint8_t coil2_profile;
-} __attribute__((__packed__))BoardConfigMsg_t;
+} __attribute__((__packed__))BoardConfigPayload_t;
 
 typedef struct {
-  GeaMessageHeader_t header;
   uint8_t coil1Power;
   uint8_t coil2Power;
   uint8_t heartbeat;
-} __attribute__((__packed__))SetPowerLevelsMsg_t;
+} __attribute__((__packed__))SetPowerLevelsPayload_t;
 
 /*
  * Command codes for the generator boards

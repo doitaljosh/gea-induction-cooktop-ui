@@ -148,7 +148,7 @@ void GeaReceiveMessage(char* rxBufferEscaped, int rxBufferSize) {
 /*
  * Builds a GEA message frame given the destination, command, payload buffer, and payload length, then transmits it over the serial bus.
  */
-int GeaTransmitMessage(byte dst, byte cmd, const byte* payload, int payloadLength) {
+int GeaTransmitMessage(byte dst, byte cmd, char* payload, int payloadLength) {
   int msgBufLength = payloadLength + GEA_OVERHEAD;
   char* message = (char*)malloc(msgBufLength);
 
@@ -177,6 +177,12 @@ int GeaTransmitMessage(byte dst, byte cmd, const byte* payload, int payloadLengt
   // Append EOF byte
   message[5+payloadLength+2] = GEA_EOF;
 
-  Serial1.write(message, payloadLength + msgBufLength);
+  // Escape the message and transmit it
+  char* escapedMessage = escapeMessage(message, msgBufLength);
+  Serial1.write(escapedMessage, msgBufLength + escapedBytes);
   Serial1.write(GEA_ACK);
+
+  free(message);
+
+  return 0;
 }

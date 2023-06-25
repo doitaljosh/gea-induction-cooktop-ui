@@ -15,36 +15,23 @@ int maxPowerSteps = 19;
  */
 int initSingleGenerator(uint8_t address, uint8_t profile1, uint8_t profile2) {
   GeaCommandList cmd;
-  BoardConfigMsg_t msg;
+  BoardConfigPayload_t payload;
 
-  msg.header.sof = GEA_SOF;
-  msg.header.destination = address;
-  msg.header.length = 0x0a;
-  msg.header.source = LOCAL_ADDR;
-  msg.header.command = CMD_SET_BOARD_CONFIG;
-  msg.coil1_profile = profile1;
-  msg.coil2_profile = profile2;
+  payload.coil1_profile = profile1;
+  payload.coil2_profile = profile2;
 
-  int txBufferSize = (sizeof(BoardConfigMsg_t) + 3);
-  char txBuffer[txBufferSize];
+  int payloadSize = sizeof(BoardConfigPayload_t);
 
-  memcpy(txBuffer, &msg, (txBufferSize - 3));
+  char payloadBuf[payloadSize];
+  memcpy(payloadBuf, &payload, payloadSize);
 
-  uint16_t crc16 = CalculateCrc16(txBuffer, (txBufferSize - 3));
-
-  txBuffer[txBufferSize - 3] = crc16 & 0xff;
-  txBuffer[txBufferSize - 2] = crc16 >> 8;
-  txBuffer[txBufferSize - 1] = GEA_EOF;
-
-  char* txBufferAck = escapeMessage(txBuffer, msg.header.length);
-
-  printHexByteArray(txBufferAck, sizeof(txBuffer) + escapedBytes);
-  Serial1.write(txBufferAck, sizeof(txBuffer) + escapedBytes);
-
-  free(txBuffer);
-  free(txBufferAck);
-    
-  return 0;
+  if (GeaTransmitMessage(address, CMD_SET_BOARD_CONFIG, payloadBuf, payloadSize) == 0) {
+    return 0;
+  } else {
+    Serial.print("Failed to transmit config message to address ");
+    Serial.println(address);
+    return -1;
+  }
 }
 
 /*
@@ -52,41 +39,26 @@ int initSingleGenerator(uint8_t address, uint8_t profile1, uint8_t profile2) {
  */
 int setPowerLevels(uint8_t address, uint8_t coil1Level, uint8_t coil2Level, uint8_t heartbeat) {
   GeaCommandList cmd;
-  SetPowerLevelsMsg_t msg;
+  SetPowerLevelsPayload_t payload;
 
   if (!withinRange(coil1Level, minPowerSteps, maxPowerSteps) && !withinRange(coil2Level, minPowerSteps, maxPowerSteps)) {
     return -1;
   }
   
-  msg.header.sof = GEA_SOF;
-  msg.header.destination = address;
-  msg.header.length = 0x0b;
-  msg.header.source = LOCAL_ADDR;
-  msg.header.command = CMD_SET_PWR_LEVELS;
-  msg.coil1Power = coil1Level;
-  msg.coil2Power = coil2Level;
-  msg.heartbeat = heartbeat;
+  payload.coil1Power = coil1Level;
+  payload.coil2Power = coil2Level;
+  payload.heartbeat = heartbeat;
+
+  int payloadSize = sizeof(SetPowerLevelsPayload_t);
   
-  int txBufferSize = (sizeof(SetPowerLevelsMsg_t) + 3);
-  char txBuffer[txBufferSize];
- 
-  memcpy(txBuffer, &msg, (txBufferSize - 3));
-   
-  uint16_t crc16 = CalculateCrc16(txBuffer, (txBufferSize - 3));
-  txBuffer[txBufferSize - 3] = crc16 & 0xff;
-  txBuffer[txBufferSize - 2] = crc16 >> 8;
-  txBuffer[txBufferSize - 1] = GEA_EOF;
+  char payloadBuf[payloadSize];
+  memcpy(payloadBuf, &payload, payloadSize);
   
-  char* txBufferAck = escapeMessage(txBuffer, msg.header.length);
-  
-  Serial.print("txBufferSize=");
-  Serial.println(sizeof(txBufferAck));
-  
-  printHexByteArray(txBufferAck, sizeof(txBuffer) + escapedBytes);
-  Serial1.write(txBufferAck, sizeof(txBuffer) + escapedBytes);
-  
-  free(txBuffer);
-  free(txBufferAck);
-    
-  return 0;
+  if (GeaTransmitMessage(address, CMD_SET_PWR_LEVELS, payloadBuf, payloadSize) == 0) {
+    return 0;
+  } else {
+    Serial.print("Failed to transmit control message to address ");
+    Serial.println(address);
+    return -1;
+  }
 }

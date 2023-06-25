@@ -30,6 +30,6 @@ bool isEscaped(uint8_t value);
 char* escapeMessage(char* unescapedMsg, size_t length);
 char* unescapeMessage(char* escapedMsg);
 void GeaReceiveMessage(char* rxBufferEscaped, int rxBufferSize);
-int GeaTransmitMessage(byte dst, byte cmd, const byte* payload, int payloadLength);
+int GeaTransmitMessage(byte dst, byte cmd, char* payload, int payloadLength);
 
 #endif
