@@ -17,9 +17,11 @@
 #include "crc16.h"
 #include "gea_core.h"
 #include "generator_board.h"
+#include "input.h"
 
 int numberOfCoils;
-int potValues[5];
+uint16_t potValuesRaw[numPots];
+uint8_t potValuesMapped[numPots];
 int heartbeat;
 
 HardwareSerial Serial1(PA10, PA9);
@@ -82,6 +84,9 @@ void setup() {
   Serial.begin(115200); // Console logging
   Serial1.begin(19200);
   Serial.println("Initializing potentiometers...");
+  Serial.print("Using an ADC resolution of ");
+  Serial.print(ADC_RESOLUTION);
+  Serial.println(" bits");
 
   for (int i=0; i<5; i++) {
     pinMode(potPins[i], INPUT);
@@ -122,26 +127,24 @@ void loop() {
   for(heartbeat = 0; heartbeat < 256; heartbeat++) {
     digitalWrite(heartbeatLed, !digitalRead(heartbeatLed));
 
+    readPotsMapped(potValuesMapped, 0, 19);
     
-    Serial.print("Power levels: ");
-
-    for(int i=0; i<5; i++) {
-      potValues[i] = map(analogRead(potPins[i]), 41, 4095, minPowerSteps, maxPowerSteps);
-      Serial.print(potValues[i]);
+    Serial.print("Pot values: ");
+    for (int i=0; i<numPots; i++) {
+      Serial.print(potValuesMapped[i]);
       Serial.print(" ");
     }
-
     Serial.println();
     
     switch(numberOfCoils) {
       case 4:
-        setPowerLevels(GEN1_ADDR, potValues[0], potValues[1], heartbeat);
-        setPowerLevels(GEN2_ADDR, potValues[2], potValues[3], heartbeat);
+        setPowerLevels(GEN1_ADDR, potValuesMapped[0], potValuesMapped[1], heartbeat);
+        setPowerLevels(GEN2_ADDR, potValuesMapped[2], potValuesMapped[3], heartbeat);
         break;
       case 5:
-        setPowerLevels(GEN1_ADDR, potValues[0], potValues[1], heartbeat);
-        setPowerLevels(GEN2_ADDR, potValues[4], 0, heartbeat);
-        setPowerLevels(GEN3_ADDR, potValues[2], potValues[3], heartbeat);
+        setPowerLevels(GEN1_ADDR, potValuesMapped[0], potValuesMapped[1], heartbeat);
+        setPowerLevels(GEN2_ADDR, potValuesMapped[4], 0, heartbeat);
+        setPowerLevels(GEN3_ADDR, potValuesMapped[2], potValuesMapped[3], heartbeat);
         break;
     }
 

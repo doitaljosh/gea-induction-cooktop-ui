@@ -5,10 +5,11 @@
 
 /* 
  * The GE induction generator boards support 20 power levels. 
- * These must be mapped to ADC values from the pots. 
+ * They will be mapped to raw ADC values from the pots. 
  */
 int minPowerSteps = 0;
 int maxPowerSteps = 19;
+char consoleBuffer[256];
 
 /*
  * @brief Initialize a generator board at an address and tell it what type of coils are connected
@@ -28,8 +29,8 @@ int initSingleGenerator(uint8_t address, uint8_t profile1, uint8_t profile2) {
   if (GeaTransmitMessage(address, CMD_SET_BOARD_CONFIG, payloadBuf, payloadSize) == 0) {
     return 0;
   } else {
-    Serial.print("Failed to transmit config message to address ");
-    Serial.println(address);
+    sprintf(consoleBuffer, "E: Failed to transmit config message to address 0x%02X\n", address);
+    Serial.print(consoleBuffer);
     return -1;
   }
 }
@@ -40,8 +41,13 @@ int initSingleGenerator(uint8_t address, uint8_t profile1, uint8_t profile2) {
 int setPowerLevels(uint8_t address, uint8_t coil1Level, uint8_t coil2Level, uint8_t heartbeat) {
   GeaCommandList cmd;
   SetPowerLevelsPayload_t payload;
+  
+  sprintf(consoleBuffer, "Addr: 0x%02X Coil1: %d Coil2: %d\n", address, coil1Level, coil2Level);
+  Serial.print(consoleBuffer);
 
-  if (!withinRange(coil1Level, minPowerSteps, maxPowerSteps) && !withinRange(coil2Level, minPowerSteps, maxPowerSteps)) {
+  if (!withinRange(coil1Level, minPowerSteps, maxPowerSteps) || !withinRange(coil2Level, minPowerSteps, maxPowerSteps)) {
+    sprintf(consoleBuffer, "E: Zone values out of range for address 0x%02X\n", address);
+    Serial.print(consoleBuffer);
     return -1;
   }
   
@@ -57,8 +63,8 @@ int setPowerLevels(uint8_t address, uint8_t coil1Level, uint8_t coil2Level, uint
   if (GeaTransmitMessage(address, CMD_SET_PWR_LEVELS, payloadBuf, payloadSize) == 0) {
     return 0;
   } else {
-    Serial.print("Failed to transmit control message to address ");
-    Serial.println(address);
+    sprintf(consoleBuffer, "E: Failed to transmit zone control message to address 0x%02X\n", address);
+    Serial.print(consoleBuffer);
     return -1;
   }
 }

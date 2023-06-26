@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "gea_core.h"
 #include "crc16.h"
+#include "utils.h"
+#include "config.h"
 
 int escapedBytes = 0;
 
@@ -31,7 +33,7 @@ char* escapeMessage(char* unescapedMsg, size_t length) {
   for (size_t i = 1; i < length - 1; i++) {
       if (isEscaped(unescapedMsg[i])) {
           escapedLength++;
-          // Increment the global variable, so other functions know how many escaped bytes were found.
+          // Set the global variable, so other functions know how many escaped bytes were found.
           escapedBytes = escapedLength - length;
       }
   }
@@ -64,7 +66,7 @@ char* unescapeMessage(char* escapedMsg) {
   char* unescapedMsg = (char*)malloc(escapedLength + 1);
 
   if (unescapedMsg == NULL) {
-    Serial.println("Failed to allocate memory for unescaped RX buffer");
+    Serial.println("E: Failed to allocate memory for unescaped RX buffer");
     return NULL;
   }
 
@@ -76,7 +78,7 @@ char* unescapeMessage(char* escapedMsg) {
       escapedIdx++;
 
       if (escapedIdx >= escapedLength) {
-        Serial.println("escapedIdx is out of range. Invalid escape sequence.");
+        Serial.println("E: escapedIdx is out of range. Invalid escape sequence.");
         free(unescapedMsg);
         return NULL;
       }
@@ -153,7 +155,7 @@ int GeaTransmitMessage(byte dst, byte cmd, char* payload, int payloadLength) {
   char* message = (char*)malloc(msgBufLength);
 
   if (message == NULL) {
-    Serial.println("Failed to allocate memory for TX buffer");
+    Serial.println("E: Failed to allocate memory for TX buffer");
     return NULL;
   }
 
@@ -179,6 +181,10 @@ int GeaTransmitMessage(byte dst, byte cmd, char* payload, int payloadLength) {
 
   // Escape the message and transmit it
   char* escapedMessage = escapeMessage(message, msgBufLength);
+#ifdef __DEBUG__
+  Serial.print("GEA TX: ");
+  printHexByteArray(escapedMessage, msgBufLength + escapedBytes);
+#endif
   Serial1.write(escapedMessage, msgBufLength + escapedBytes);
   Serial1.write(GEA_ACK);
 
