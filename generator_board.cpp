@@ -42,7 +42,7 @@ int setPowerLevels(uint8_t address, uint8_t coil1Level, uint8_t coil2Level, uint
   GeaCommandList cmd;
   SetPowerLevelsPayload_t payload;
   
-  sprintf(consoleBuffer, "Addr: 0x%02X Coil1: %d Coil2: %d\n", address, coil1Level, coil2Level);
+  sprintf(consoleBuffer, "I: Addr: 0x%02X Coil1: %d Coil2: %d\n", address, coil1Level, coil2Level);
   Serial.print(consoleBuffer);
 
   if (!withinRange(coil1Level, minPowerSteps, maxPowerSteps) || !withinRange(coil2Level, minPowerSteps, maxPowerSteps)) {
@@ -67,4 +67,70 @@ int setPowerLevels(uint8_t address, uint8_t coil1Level, uint8_t coil2Level, uint
     Serial.print(consoleBuffer);
     return -1;
   }
+}
+
+char* getSoftwareVersion(uint8_t address) {
+  GeaTransmitMessage(address, CMD_GET_SW_VERSION, 0, 0);
+  char* softwareVersionPayload = GeaReceivePayload(address, CMD_GET_SW_VERSION);
+  if (sizeof(softwareVersionPayload) == 4) {
+    return softwareVersionPayload;
+  } else {
+    sprintf(consoleBuffer, "E: Bad payload length: %d in software version message. Should be $d.", sizeof(softwareVersionPayload), 4);
+    Serial.println(consoleBuffer);
+    return NULL;
+  }
+}
+
+Status_t getStatus(uint8_t address) {
+  Status_t status;
+  int responsePayloadLength = RESP_LENGTH_STATUS;
+  char statusPayloadRequest[responsePayloadLength];
+
+  for (int i=0; i<responsePayloadLength; i++) {
+    statusPayloadRequest[i] = 0x00;
+  }
+  
+  GeaTransmitMessage(address, CMD_GET_STATUS, statusPayloadRequest, responsePayloadLength);
+  char* statusPayloadResponse = GeaReceivePayload(address, CMD_GET_STATUS);
+  
+  if (sizeof(statusPayloadResponse) == 20) {
+    status.unk1 = statusPayloadResponse[0] << 8 | statusPayloadResponse[1];
+    status.unk2 = statusPayloadResponse[2] << 8 | statusPayloadResponse[3];
+    status.unk3 = statusPayloadResponse[4] << 8 | statusPayloadResponse[5];
+    status.unk4 = statusPayloadResponse[6] << 8 | statusPayloadResponse[7];
+    status.unk5 = statusPayloadResponse[8] << 8 | statusPayloadResponse[9];
+    status.halfBridge0_temp = statusPayloadResponse[10] << 8 | statusPayloadResponse[11];
+    status.coil0_temp = statusPayloadResponse[12] << 8 | statusPayloadResponse[13];
+    status.halfBridge1_temp = statusPayloadResponse[14] << 8 | statusPayloadResponse[15];
+    status.coil1_temp = statusPayloadResponse[16] << 8 | statusPayloadResponse[17];
+    status.acLineVoltage = statusPayloadResponse[18] << 8 | statusPayloadResponse[19];
+
+    return status;
+  } else {
+    sprintf(consoleBuffer, "E: Bad payload length: %d in status message. Should be %d.", sizeof(statusPayloadResponse), responsePayloadLength);
+    Serial.println(consoleBuffer);
+    return status;
+  }
+}
+
+void printStatus(uint8_t address) {
+  Status_t status = getStatus(address);
+
+  uint16_t coil0Temp = status.coil0_temp;
+  uint16_t halfBridge0Temp = status.halfBridge0_temp;
+  uint16_t coil1Temp = status.coil1_temp;
+  uint16_t halfBridge1Temp = status.halfBridge1_temp;
+  uint16_t acLineVoltage = status.acLineVoltage;
+
+  sprintf(
+          consoleBuffer, 
+          "I: Status for 0x%02X: Coil 0 Temp: %d*F, Coil 1 Temp: %d*F, H-Bridge 0 Temp: %d*F, H-Bridge 1 Temp: %d*F, AC Line Voltage: %dV",
+          address, 
+          coil0Temp,
+          coil1Temp,
+          halfBridge0Temp,
+          halfBridge1Temp,
+          acLineVoltage
+          );
+  Serial.println(consoleBuffer);
 }

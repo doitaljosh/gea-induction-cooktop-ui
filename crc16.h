@@ -41,6 +41,8 @@ static const uint16_t crc16Table[] = {
   0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0,
 };
 
+const uint16_t crc16Seed = 0x1021;
+
 uint16_t CalculateCrc16(char *dataToCheck, int sizeOfData);
 
 #endif

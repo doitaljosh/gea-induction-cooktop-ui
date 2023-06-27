@@ -173,8 +173,8 @@ int GeaTransmitMessage(byte dst, byte cmd, char* payload, int payloadLength) {
 
   // Calculate CRC16
   uint16_t crc16 = CalculateCrc16(message, payloadLength + 5);
-  message[5+payloadLength] = crc16 & 0xFF;
-  message[5+payloadLength+1] = crc16 >> 8;
+  message[5+payloadLength] = crc16 >> 8;
+  message[5+payloadLength+1] = crc16 & 0xFF;
 
   // Append EOF byte
   message[5+payloadLength+2] = GEA_EOF;
@@ -182,7 +182,7 @@ int GeaTransmitMessage(byte dst, byte cmd, char* payload, int payloadLength) {
   // Escape the message and transmit it
   char* escapedMessage = escapeMessage(message, msgBufLength);
 #ifdef __DEBUG__
-  Serial.print("GEA TX: ");
+  Serial.print("D: GEA TX: ");
   printHexByteArray(escapedMessage, msgBufLength + escapedBytes);
 #endif
   Serial1.write(escapedMessage, msgBufLength + escapedBytes);
@@ -191,4 +191,86 @@ int GeaTransmitMessage(byte dst, byte cmd, char* payload, int payloadLength) {
   free(message);
 
   return 0;
+}
+
+GeaMessage_t GeaValidateAndParseReceivedMessage(char* rxBuffer, size_t rxBufferSize) {
+  GeaMessage_t msg;
+  msg.payload = NULL;
+
+  char* rxBufferUnescaped = unescapeMessage(rxBuffer);
+
+  // Check the SOF
+  if (rxBufferUnescaped[0] != GEA_SOF) {
+    Serial.println("E: Invalid GEA message: Invalid STX received");
+    return msg;
+  }
+
+  msg.destination = rxBufferUnescaped[1];
+  msg.length = rxBufferUnescaped[2];
+  msg.source = rxBufferUnescaped[3];
+  msg.command = rxBufferUnescaped[4];
+
+  // Validate the length
+  size_t expectedLength = msg.length;
+  if (rxBufferSize != expectedLength) {
+    Serial.println("E: Invalid GEA message: Length mismatch.");
+    return msg;
+  }
+
+  // Validate the CRC16
+  uint16_t expectedCrc16 = (rxBufferUnescaped[rxBufferSize - 3] << 8) | rxBufferUnescaped[rxBufferSize - 2];
+  uint16_t calculatedCrc16 = CalculateCrc16(rxBufferUnescaped, rxBufferSize - 3);
+  if (expectedCrc16 != calculatedCrc16) {
+    Serial.println("E: Invalid GEA message: Checksum mismatch.");
+    return msg;
+  }
+
+  // Check the ETX
+  if (rxBufferUnescaped[rxBufferSize - 1] != GEA_EOF) {
+    Serial.println("E: Invalid GEA message: ETX not found or unexpected EOF.");
+    return msg;
+  }
+
+  // Calculate the length of the payload.
+  size_t payloadLength = msg.length - GEA_OVERHEAD;
+
+  // Allocate memory for the payload struct member.
+  msg.payload = (uint8_t*)realloc(msg.payload, payloadLength * sizeof(uint8_t));
+  if (msg.payload == NULL) {
+    Serial.println("E: Failed to allocate memory for GEA message payload.");
+    return msg;
+  }
+
+  // Copy payload data from unescaped message buffer;
+  memcpy(msg.payload, rxBufferUnescaped + 5, payloadLength);
+
+  return msg;
+}
+
+void GeaUnallocatePayloadMemory(GeaMessage_t* msg) {
+  free(msg->payload);
+  msg->payload = NULL;
+}
+
+char* GeaReceivePayload(uint8_t sourceAddress, uint8_t command) {
+  char rxBufferEscaped[GEA_RXBUF_SIZE];
+  
+  GeaReceiveMessage(rxBufferEscaped, GEA_RXBUF_SIZE);
+  
+  char* rxBufferUnescaped = unescapeMessage(rxBufferEscaped);
+
+  uint8_t messageLength = rxBufferUnescaped[2];
+
+  GeaMessage_t msg = GeaValidateAndParseReceivedMessage(rxBufferUnescaped, rxBufferUnescaped[2]);
+  int payloadLength = msg.length - GEA_OVERHEAD;
+  char payload[payloadLength];
+
+  if (msg.source == sourceAddress && msg.command == command) {
+    for (int i = 0; i < payloadLength; i++) {
+      payload[i] = msg.payload[i];
+    }
+
+    GeaUnallocatePayloadMemory(&msg);
+    return payload;
+  }
 }

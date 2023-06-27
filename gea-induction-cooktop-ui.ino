@@ -6,10 +6,10 @@
  * - Tie the personality pin high if you are controlling a 36 inch cooktop with 5 coils and 3 generator boards.
  * - To connect to the single-wire half-duplex serial bus the generator boards use, connect a bus transceiver. Refer to the following for design tips: https://github.com/wfang2002/Full-Half-Duplex-Adapter
  * 
- * Note: you MUST use an Arduino-compatible board that supports at least two hardware serial busses, or change Serial or Serial2 to use SoftwareSerial.
+ * Note: you MUST use an Arduino-compatible board that supports at least two hardware serial busses, or change Serial or Serial1 to use SoftwareSerial.
  * 
  * Written by Joshua Currier (doitaljosh)
- * 05/01/2022
+ * 06/26/2023
  */
 
 #include "config.h"
@@ -52,8 +52,10 @@ int initCooktop(int personality) {
       initSingleGenerator(GEN2_ADDR, COIL_TYPE_3700_WATT, COIL_TYPE_1800_WATT);
       delay(100);
       setPowerLevels(GEN1_ADDR, 0, 0, 0);
+      printStatus(GEN1_ADDR);
       delay(100);
       setPowerLevels(GEN2_ADDR, 0, 0, 0);
+      printStatus(GEN2_ADDR);
       delay(100);
       break;
     case PERSONALITY_FIVE_COILS:
@@ -64,10 +66,13 @@ int initCooktop(int personality) {
       initSingleGenerator(GEN3_ADDR, COIL_TYPE_1800_WATT, COIL_TYPE_3200_WATT);
       delay(100);
       setPowerLevels(GEN1_ADDR, 0, 0, 0);
+      printStatus(GEN1_ADDR);
       delay(100);
       setPowerLevels(GEN2_ADDR, 0, 0, 0);
+      printStatus(GEN2_ADDR);
       delay(100);
       setPowerLevels(GEN3_ADDR, 0, 0, 0);
+      printStatus(GEN3_ADDR);
       delay(100);
       break;
     default:
@@ -83,8 +88,8 @@ int initCooktop(int personality) {
 void setup() {
   Serial.begin(115200); // Console logging
   Serial1.begin(19200);
-  Serial.println("Initializing potentiometers...");
-  Serial.print("Using an ADC resolution of ");
+  Serial.println("I: Initializing potentiometers...");
+  Serial.print("I: Using an ADC resolution of ");
   Serial.print(ADC_RESOLUTION);
   Serial.println(" bits");
 
@@ -108,7 +113,7 @@ void setup() {
   }
 
   
-  Serial.print("Initializing generator boards for a ");
+  Serial.print("I: Initializing generator boards for a ");
   if (personality == 1) {
     //Serial.println("36 inch cooktop...");
   } else {
@@ -117,7 +122,7 @@ void setup() {
   
 
   initCooktop(personality);
-  Serial.println("Starting main loop...");
+  Serial.println("I: Starting main loop...");
 }
 
 /*
@@ -129,7 +134,7 @@ void loop() {
 
     readPotsMapped(potValuesMapped, 0, 19);
     
-    Serial.print("Pot values: ");
+    Serial.print("I: Pot values: ");
     for (int i=0; i<numPots; i++) {
       Serial.print(potValuesMapped[i]);
       Serial.print(" ");
