@@ -20,6 +20,9 @@
 #define fanLowPin PB6 //          Low speed cooling fan output
 #define fanHighPin PA7 //         High speed cooling fan output
 
+#define geaUartRxPin PA10 // Receive pin for GEA bus
+#define geaUartTxPin PA9 // Transmit pin for GEA bus
+
 // Analog potentiometer pins
 #define numPots 5
 const int potPins[numPots] = {pot1Pin, pot2Pin, pot3Pin, pot4Pin, pot5Pin};

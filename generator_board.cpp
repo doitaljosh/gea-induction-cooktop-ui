@@ -114,14 +114,10 @@ Status_t getStatus(uint8_t address) {
 }
 
 void printSoftwareVersions(int personality) {
-  char* board0SwVer;
-  char* board1SwVer;
-  char* board2SwVer;
-
   char swVersionLength = RESP_LENGTH_SW_VERSION;
   
-  board0SwVer = getSoftwareVersion(GEN1_ADDR);
-  board1SwVer = getSoftwareVersion(GEN2_ADDR);
+  char* board0SwVer = getSoftwareVersion(GEN1_ADDR);
+  char* board1SwVer = getSoftwareVersion(GEN2_ADDR);
 
   if (sizeof(board0SwVer) == swVersionLength && sizeof(board1SwVer) == swVersionLength) {
     sprintf(consoleBuffer, "I: Gen0 Software Version: %d.%d.%d.%d", board0SwVer[0], board0SwVer[1], board0SwVer[2], board0SwVer[3]);
@@ -131,7 +127,7 @@ void printSoftwareVersions(int personality) {
   }
       
   if (personality > 0) {
-    board2SwVer = getSoftwareVersion(GEN3_ADDR);
+    char* board2SwVer = getSoftwareVersion(GEN3_ADDR);
       
     if (sizeof(board2SwVer) == swVersionLength) {
       sprintf(consoleBuffer, "I: Gen2 Software Version: %d.%d.%d.%d", board2SwVer[0], board2SwVer[1], board2SwVer[2], board2SwVer[3]);

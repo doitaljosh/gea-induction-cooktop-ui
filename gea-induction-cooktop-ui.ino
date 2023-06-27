@@ -24,7 +24,7 @@ uint16_t potValuesRaw[numPots];
 uint8_t potValuesMapped[numPots];
 int heartbeat;
 
-HardwareSerial Serial1(PA10, PA9);
+HardwareSerial Serial1(geaUartRxPin, geaUartTxPin);
 
 /*
  * Personality IDs
