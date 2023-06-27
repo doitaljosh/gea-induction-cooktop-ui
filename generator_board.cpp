@@ -113,6 +113,47 @@ Status_t getStatus(uint8_t address) {
   }
 }
 
+void printSoftwareVersions(int personality) {
+  char* board0SwVer;
+  char* board1SwVer;
+  char* board2SwVer;
+
+  char swVersionLength = RESP_LENGTH_SW_VERSION;
+  
+  switch(personality) {
+    case 0:
+      board0SwVer = getSoftwareVersion(GEN1_ADDR);
+      board1SwVer = getSoftwareVersion(GEN2_ADDR);
+
+      if (sizeof(board0SwVer) == swVersionLength && sizeof(board1SwVer) == swVersionLength) {
+        sprintf(consoleBuffer, "I: Gen0 Software Version: %d.%d.%d.%d", board0SwVer[0], board0SwVer[1], board0SwVer[2], board0SwVer[3]);
+        Serial.println(consoleBuffer);
+        sprintf(consoleBuffer, "I: Gen1 Software Version: %d.%d.%d.%d", board1SwVer[0], board1SwVer[1], board1SwVer[2], board1SwVer[3]);
+        Serial.println(consoleBuffer); 
+      }
+      
+      break;
+    case 1:
+      board0SwVer = getSoftwareVersion(GEN1_ADDR);
+      board1SwVer = getSoftwareVersion(GEN2_ADDR);
+      board2SwVer = getSoftwareVersion(GEN3_ADDR);
+      
+      if (sizeof(board0SwVer) == swVersionLength && sizeof(board1SwVer) == swVersionLength && sizeof(board2SwVer) == swVersionLength) {
+        sprintf(consoleBuffer, "I: Gen0 Software Version: %d.%d.%d.%d", board0SwVer[0], board0SwVer[1], board0SwVer[2], board0SwVer[3]);
+        Serial.println(consoleBuffer);
+        sprintf(consoleBuffer, "I: Gen1 Software Version: %d.%d.%d.%d", board1SwVer[0], board1SwVer[1], board1SwVer[2], board1SwVer[3]);
+        Serial.println(consoleBuffer);
+        sprintf(consoleBuffer, "I: Gen2 Software Version: %d.%d.%d.%d", board2SwVer[0], board2SwVer[1], board2SwVer[2], board2SwVer[3]);
+        Serial.println(consoleBuffer);
+      }
+      
+      break;
+    default:
+      sprintf(consoleBuffer, "E: printSoftwareVersion(): Unknown personality type %d", personality);
+      Serial.println(consoleBuffer);
+  }
+}
+
 void printStatus(uint8_t address) {
   Status_t status = getStatus(address);
 

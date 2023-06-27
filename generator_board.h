@@ -94,6 +94,7 @@ int initSingleGenerator(uint8_t address, uint8_t profile1, uint8_t profile2);
 int setPowerLevels(uint8_t address, uint8_t coil1Level, uint8_t coil2Level, uint8_t heartbeat);
 char* getSoftwareVersion(uint8_t address);
 Status_t getStatus(uint8_t address);
+void printSoftwareVersions(int personality);
 void printStatus(uint8_t address);
 
 #endif

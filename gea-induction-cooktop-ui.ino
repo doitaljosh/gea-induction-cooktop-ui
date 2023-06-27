@@ -44,6 +44,8 @@ int initCooktop(int personality) {
   digitalWrite(fanLowPin, HIGH); // Turn on the cooling fan
 
   delay(1000); // Allow generator firmware time to boot
+
+  printSoftwareVersions(personality);
   
   switch(personalityName) {
     case PERSONALITY_FOUR_COILS:
